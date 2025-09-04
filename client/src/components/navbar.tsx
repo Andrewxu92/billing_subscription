@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Camera, Menu, X } from "lucide-react";
+import { Link } from "wouter";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logoutMutation } = useAuth();
 
   const navigation = [
     { name: "Editor", href: "/editor" },
@@ -27,11 +28,11 @@ export function Navbar() {
   };
 
   const handleLogin = () => {
-    window.location.href = '/api/login';
+    window.location.href = '/auth';
   };
 
   const handleLogout = () => {
-    window.location.href = '/api/logout';
+    logoutMutation.mutate();
   };
 
   return (
@@ -63,7 +64,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 <span className="text-muted-foreground" data-testid="nav-username">
-                  {user?.firstName || user?.email || "User"}
+                  {user?.firstName || user?.username || "User"}
                 </span>
                 <Button 
                   variant="ghost"
@@ -132,7 +133,7 @@ export function Navbar() {
                 {isAuthenticated ? (
                   <>
                     <div className="px-3 py-2 text-sm text-muted-foreground">
-                      {user?.firstName || user?.email || "User"}
+                      {user?.firstName || user?.username || "User"}
                     </div>
                     <Button 
                       variant="ghost" 

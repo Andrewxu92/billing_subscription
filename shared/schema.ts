@@ -24,10 +24,12 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (mandatory for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username").notNull().unique(),
   email: varchar("email").unique(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -103,7 +105,7 @@ export const aiUsage = pgTable("ai_usage", {
 });
 
 // Type exports
-export type UpsertUser = typeof users.$inferInsert;
+export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 export type InsertSubscriptionPlan = typeof subscriptionPlans.$inferInsert;
@@ -139,3 +141,19 @@ export const createPaymentIntentSchema = z.object({
   planId: z.string(),
   billingCycle: z.enum(["monthly", "yearly", "lifetime"]),
 });
+
+// Auth schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserType = z.infer<typeof insertUserSchema>;
+
+export const loginSchema = z.object({
+  username: z.string().min(3),
+  password: z.string().min(6),
+});
+
+export type LoginData = z.infer<typeof loginSchema>;

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingCard } from "@/components/pricing-card";
@@ -123,10 +124,12 @@ export default function Landing() {
                   size="lg" 
                   className="bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:opacity-90 transition-all transform hover:scale-105"
                   data-testid="button-edit-free"
-                  onClick={() => window.location.href = '/api/login'}
+                  asChild
                 >
-                  <Camera className="mr-2 h-5 w-5" />
-                  Edit Photo for Free
+                  <Link href="/auth">
+                    <Camera className="mr-2 h-5 w-5" />
+                    Edit Photo for Free
+                  </Link>
                 </Button>
                 <Button 
                   variant="outline" 
@@ -354,9 +357,11 @@ export default function Landing() {
               size="lg" 
               variant="secondary"
               data-testid="button-start-trial"
-              onClick={() => window.location.href = '/api/login'}
+              asChild
             >
-              Start Free Trial
+              <Link href="/auth">
+                Start Free Trial
+              </Link>
             </Button>
             <Button 
               size="lg" 

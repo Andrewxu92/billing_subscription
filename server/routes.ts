@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { createPaymentIntentSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -96,7 +96,7 @@ async function createAirwallexCustomer(email: string, firstName?: string, lastNa
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupAuth(app);
 
   // Initialize subscription plans
   await initializeSubscriptionPlans();
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payment intent for subscription
   app.post('/api/create-payment-intent', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -355,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user projects
   app.get('/api/projects', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const projects = await storage.getUserProjects(userId);
       res.json(projects);
     } catch (error) {
@@ -367,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new project
   app.post('/api/projects', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { name, thumbnailUrl, projectData } = req.body;
 
       const project = await storage.createUserProject({
@@ -387,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track AI usage
   app.post('/api/ai-usage', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { featureType, creditsUsed = 1 } = req.body;
 
       const currentDate = new Date();
