@@ -190,31 +190,40 @@ export async function createAirwallexBillingCheckout(
     billing_customer_id: customerId,
     currency: "USD",
     customer_data_collection: {
-      enabled: true
+      enabled: true,
     },
     legal_entity_id: AIRWALLEX_LEGAL_ENTITY_ID,
     line_items: [
       {
         price_id: priceId,
-        quantity: 1
-      }
+        quantity: 1,
+      },
     ],
     linked_payment_account_id: AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-    locale: "AUTO", 
+    locale: "AUTO",
     mode: "SUBSCRIPTION",
+    subscription_data: {
+       days_until_due: 0,
+       default_invoice_template: {
+          invoice_memo: "Thanks for your purchase."
+       },},
     request_id: `checkout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    success_url: successUrl
+    success_url: successUrl,
   };
 
-  console.log('Creating billing checkout with request body:', JSON.stringify(requestBody, null, 2));
+  console.log(
+    "Creating billing checkout with request body:",
+    JSON.stringify(requestBody, null, 2),
+  );
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/checkout_sessions/create`,
+    `${AIRWALLEX_BASE_URL}/api/v1/billing_checkouts/create`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "x-api-version": "2025-08-29",
       },
       body: JSON.stringify(requestBody),
     },
