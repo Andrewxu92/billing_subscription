@@ -28,6 +28,7 @@ async function getAirwallexToken(): Promise<string> {
       headers: {
         "Content-Type": "application/json",
         "x-client-id": AIRWALLEX_CLIENT_ID,
+        "x-api-key": AIRWALLEX_API_KEY,
       },
      
         client_id:
