@@ -61,14 +61,15 @@ async function createAirwallexBillingCustomer(
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "x-api-version": "2025-08-29",
       },
       body: JSON.stringify({
         address: {
-          country_code: "US"
+          country_code: "US",
         },
         email,
         request_id: `billing_cus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: "INDIVIDUAL"
+        type: "INDIVIDUAL",
       }),
     },
   );
@@ -79,8 +80,10 @@ async function createAirwallexBillingCustomer(
       `Failed to create billing customer: ${response.status} ${errorText}`,
     );
   }
-
-  return await response.json();
+  
+  const customerData = await response.json();
+  console.log('Billing customer created successfully:', JSON.stringify(customerData, null, 2));
+  return customerData;
 }
 
 async function createAirwallexBillingCheckout(
@@ -108,10 +111,12 @@ async function createAirwallexBillingCheckout(
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "x-api-version":"2025-08-29",
       },
       body: JSON.stringify({
+        mode: "subscription",
         customer_id: customerId,
-        amount: (amount || 0) * 100, // Convert to cents
+        amount: amount || 0,
         currency: "USD",
         billing_cycle: billingCycle,
         product_name: plan.name,
@@ -247,6 +252,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user.lastName || undefined,
         );
         const billingCustomerId = customerData.id;
+        
+        // Save billing customer ID to user record
+        console.log(`Saving billing customer ID ${billingCustomerId} for user ${userId}`);
+        await storage.updateUser(userId, { billingCustomerId });
 
         // Create billing checkout page
         const successUrl = `${req.protocol}://${req.get("host")}/payment-success`;
@@ -279,8 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           billing_cycle: billingCycle,
         });
       } catch (error) {
-        console.error("Error creating payment intent:", error);
-        res.status(500).json({ message: "Failed to create payment intent" });
+        console.error("Error createAirwallexBillingCheckout", error);
+        res.status(500).json({ message: "Failed to createAirwallexBillingCheckout" });
       }
     },
   );
