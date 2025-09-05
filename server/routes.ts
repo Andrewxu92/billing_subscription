@@ -20,6 +20,7 @@ async function getAirwallexToken(): Promise<string> {
     throw new Error("Airwallex credentials not configured");
   }
 
+  console.log('Authenticating with Airwallex:', AIRWALLEX_BASE_URL);
   const response = await fetch(
     `${AIRWALLEX_BASE_URL}/api/v1/authentication/authenticate`,
     {
@@ -45,52 +46,7 @@ async function getAirwallexToken(): Promise<string> {
   return data.token;
 }
 
-async function createAirwallexPaymentIntent(
-  amount: number,
-  currency: string,
-  orderId: string,
-  customerId?: string,
-) {
-  const token = await getAirwallexToken();
-
-  const payload: any = {
-    amount: amount,
-    currency: currency,
-    merchant_order_id: orderId,
-    order: {
-      type: "physical_goods",
-      products: [
-        {
-          name: "PhotoPro Subscription",
-          quantity: 1,
-          unit_price: amount,
-        },
-      ],
-    },
-  };
-
-  if (customerId) {
-    payload.customer_id = customerId;
-  }
-
-  const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/pa/payment_intents/create`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to create payment intent");
-  }
-
-  return await response.json();
-}
+// Removed createAirwallexPaymentIntent - not needed for billing flow
 
 async function createAirwallexBillingCustomer(
   email: string,
@@ -100,7 +56,7 @@ async function createAirwallexBillingCustomer(
   const token = await getAirwallexToken();
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/billing/customers/_create`,
+    `${AIRWALLEX_BASE_URL}/api/v1/billing/customers/create`,
     {
       method: "POST",
       headers: {
@@ -144,7 +100,7 @@ async function createAirwallexBillingCheckout(
     billingCycle === "yearly" ? plan.yearlyPrice || 0 : plan.monthlyPrice || 0;
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/billing/checkouts/_create`,
+    `${AIRWALLEX_BASE_URL}/api/v1/billing/checkouts/create`,
     {
       method: "POST",
       headers: {
