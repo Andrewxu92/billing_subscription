@@ -20,19 +20,25 @@ function Router() {
     <>
       <Navbar />
       <Switch>
-        {isLoading || !isAuthenticated ? (
-          <>
-            <Route path="/" component={Landing} />
-            <Route path="/auth" component={AuthPage} />
-          </>
+        {/* Auth routes - accessible when not authenticated */}
+        <Route path="/auth" component={!isAuthenticated ? AuthPage : () => { window.location.href = '/'; return null; }} />
+        
+        {/* Main routes */}
+        {isLoading ? (
+          <Route path="/" component={() => <div className="min-h-screen flex items-center justify-center">Loading...</div>} />
+        ) : !isAuthenticated ? (
+          <Route path="/" component={Landing} />
         ) : (
           <>
             <Route path="/" component={Home} />
             <Route path="/editor" component={Editor} />
           </>
         )}
+        
+        {/* Payment routes - always accessible */}
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/payment-failed" component={PaymentFailed} />
+        
         {/* Fallback to 404 */}
         <Route component={NotFound} />
       </Switch>

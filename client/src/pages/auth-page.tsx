@@ -46,11 +46,21 @@ export default function AuthPage() {
   });
 
   const onLogin = (data: LoginData) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        // Redirect will be handled by the useEffect above when isAuthenticated becomes true
+        setLocation("/");
+      }
+    });
   };
 
   const onRegister = (data: InsertUser) => {
-    registerMutation.mutate(data);
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        // Redirect will be handled by the useEffect above when isAuthenticated becomes true
+        setLocation("/");
+      }
+    });
   };
 
   if (isAuthenticated) {

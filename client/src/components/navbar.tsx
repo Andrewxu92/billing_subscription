@@ -63,22 +63,25 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <span className="text-muted-foreground" data-testid="nav-username">
-                  {user?.firstName || user?.username || "User"}
-                </span>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                    {(user?.firstName?.[0] || user?.username?.[0] || "U").toUpperCase()}
+                  </div>
+                  <div className="text-foreground">
+                    <div className="font-medium" data-testid="nav-username">
+                      {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.username || "User"}
+                    </div>
+                    {user?.email && (
+                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                    )}
+                  </div>
+                </div>
                 <Button 
                   variant="ghost"
                   onClick={handleLogout}
                   data-testid="nav-logout"
                 >
                   Logout
-                </Button>
-                <Button 
-                  className="bg-gradient-to-r from-primary to-secondary"
-                  onClick={() => window.location.href = '/'}
-                  data-testid="nav-dashboard"
-                >
-                  Dashboard
                 </Button>
               </>
             ) : (
@@ -132,8 +135,13 @@ export function Navbar() {
               <div className="pt-4 border-t border-border space-y-2">
                 {isAuthenticated ? (
                   <>
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      {user?.firstName || user?.username || "User"}
+                    <div className="px-3 py-2 space-y-1">
+                      <div className="text-sm font-medium text-foreground">
+                        {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.username || "User"}
+                      </div>
+                      {user?.email && (
+                        <div className="text-xs text-muted-foreground">{user.email}</div>
+                      )}
                     </div>
                     <Button 
                       variant="ghost" 
@@ -142,13 +150,6 @@ export function Navbar() {
                       data-testid="nav-mobile-logout"
                     >
                       Logout
-                    </Button>
-                    <Button 
-                      className="w-full bg-gradient-to-r from-primary to-secondary"
-                      onClick={() => window.location.href = '/'}
-                      data-testid="nav-mobile-dashboard"
-                    >
-                      Dashboard
                     </Button>
                   </>
                 ) : (
