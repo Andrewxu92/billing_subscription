@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SubscriptionStatus } from "@/components/subscription-status";
 import { PhotoEditorInterface } from "@/components/photo-editor-interface";
+import { PricingCard } from "@/components/pricing-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +15,14 @@ import {
   Clock, 
   Zap, 
   FileImage,
-  Calendar
+  Calendar,
+  Crown
 } from "lucide-react";
 
 export default function Home() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -151,6 +154,48 @@ export default function Home() {
           <div className="lg:col-span-3 space-y-8">
             {/* Subscription Status */}
             <SubscriptionStatus />
+
+            {/* Choose Your Plan Section */}
+            <Card>
+              <CardHeader>
+                <div className="text-center space-y-4">
+                  <CardTitle className="flex items-center justify-center text-2xl">
+                    <Crown className="mr-2 h-6 w-6 text-primary" />
+                    Choose Your Plan
+                  </CardTitle>
+                  <p className="text-muted-foreground max-w-2xl mx-auto">
+                    Upgrade, downgrade, or manage your subscription plan. All plans include our core editing features.
+                  </p>
+                  
+                  {/* Billing Toggle */}
+                  <div className="flex items-center justify-center space-x-4">
+                    <span className={billingPeriod === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+                      Monthly
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="relative h-6 w-11 rounded-full bg-muted p-0"
+                      onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+                      data-testid="button-billing-toggle"
+                    >
+                      <div className={`h-4 w-4 rounded-full bg-primary transition-transform ${
+                        billingPeriod === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </Button>
+                    <span className={billingPeriod === 'yearly' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+                      Yearly
+                    </span>
+                    <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                      Save 20%
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <PricingCard billingPeriod={billingPeriod} />
+              </CardContent>
+            </Card>
 
             {/* Quick Start Section */}
             <Card>
