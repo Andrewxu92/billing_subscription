@@ -45,7 +45,73 @@ async function getAirwallexToken(): Promise<string> {
   return data.token;
 }
 
-// Removed createAirwallexPaymentIntent - not needed for billing flow
+// Airwallex product and price creation functions
+async function createAirwallexProduct(planName: string, description: string) {
+  const token = await getAirwallexToken();
+  
+  const response = await fetch(
+    `${AIRWALLEX_BASE_URL}/api/v1/products/create`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: planName,
+        description: description,
+        type: "service"
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to create product: ${response.status} ${errorText}`,
+    );
+  }
+
+  const productData = await response.json();
+  console.log('Product created successfully:', JSON.stringify(productData, null, 2));
+  return productData;
+}
+
+async function createAirwallexPrice(productId: string, amount: number, currency: string, billingCycle: string) {
+  const token = await getAirwallexToken();
+  
+  const response = await fetch(
+    `${AIRWALLEX_BASE_URL}/api/v1/prices/create`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        product_id: productId,
+        unit_amount: Math.round(amount * 100), // Convert to cents
+        currency: currency,
+        billing_scheme: "per_unit",
+        recurring: {
+          interval: billingCycle === "yearly" ? "year" : "month",
+          interval_count: 1
+        }
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to create price: ${response.status} ${errorText}`,
+    );
+  }
+
+  const priceData = await response.json();
+  console.log('Price created successfully:', JSON.stringify(priceData, null, 2));
+  return priceData;
+}
 
 async function createAirwallexBillingCustomer(
   email: string,
@@ -88,21 +154,11 @@ async function createAirwallexBillingCustomer(
 
 async function createAirwallexBillingCheckout(
   customerId: string,
-  planId: string,
-  billingCycle: string,
+  priceId: string,
   successUrl: string,
   cancelUrl: string,
 ) {
   const token = await getAirwallexToken();
-
-  // Get plan details to set up the checkout
-  const plan = await storage.getSubscriptionPlan(planId);
-  if (!plan) {
-    throw new Error("Plan not found");
-  }
-
-  const amount =
-    billingCycle === "yearly" ? plan.yearlyPrice || 0 : plan.monthlyPrice || 0;
 
   const response = await fetch(
     `${AIRWALLEX_BASE_URL}/api/v1/billing_checkouts/create`,
@@ -111,22 +167,13 @@ async function createAirwallexBillingCheckout(
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        "x-api-version":"2025-08-29",
       },
       body: JSON.stringify({
         mode: "subscription",
         customer_id: customerId,
-        amount: amount || 0,
-        currency: "USD",
-        billing_cycle: billingCycle,
-        product_name: plan.name,
-        product_description: `PhotoPro ${plan.name} Plan`,
+        price_id: priceId,
         success_url: successUrl,
         cancel_url: cancelUrl,
-        metadata: {
-          plan_id: planId,
-          billing_cycle: billingCycle,
-        },
       }),
     },
   );
@@ -138,7 +185,9 @@ async function createAirwallexBillingCheckout(
     );
   }
 
-  return await response.json();
+  const checkoutData = await response.json();
+  console.log('Billing checkout created successfully:', JSON.stringify(checkoutData, null, 2));
+  return checkoutData;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -257,14 +306,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Saving billing customer ID ${billingCustomerId} for user ${userId}`);
         await storage.updateUser(userId, { billingCustomerId });
 
+        // Create Airwallex product
+        const productData = await createAirwallexProduct(
+          plan.name,
+          `PhotoPro ${plan.name} Plan - ${plan.features?.slice(0, 2).join(', ')}`
+        );
+        const productId = productData.id;
+
+        // Create Airwallex price
+        const priceData = await createAirwallexPrice(
+          productId,
+          amount,
+          'USD',
+          billingCycle
+        );
+        const priceId = priceData.id;
+
         // Create billing checkout page
         const successUrl = `${req.protocol}://${req.get("host")}/payment-success`;
         const cancelUrl = `${req.protocol}://${req.get("host")}/payment-cancel`;
 
         const checkoutData = await createAirwallexBillingCheckout(
           billingCustomerId,
-          planId,
-          billingCycle,
+          priceId,
           successUrl,
           cancelUrl,
         );
