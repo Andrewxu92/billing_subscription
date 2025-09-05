@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create Airwallex product
         const productData = await createAirwallexProduct(
           plan.name,
-          `PhotoPro ${plan.name} Plan - ${plan.features?.slice(0, 2).join(', ')}`
+          `PhotoPro ${plan.name} Plan - Professional photo editing solution`
         );
         const productId = productData.id;
 
@@ -141,7 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           productId,
           amount,
           'USD',
-          billingCycle
+          billingCycle,
+          plan.name
         );
         const priceId = priceData.id;
 

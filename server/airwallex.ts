@@ -71,8 +71,11 @@ export async function createAirwallexProduct(planName: string, description: stri
 }
 
 // Price creation
-export async function createAirwallexPrice(productId: string, amount: number, currency: string, billingCycle: string) {
+export async function createAirwallexPrice(productId: string, amount: number, currency: string, billingCycle: string, planName: string) {
   const token = await getAirwallexToken();
+  
+  // Generate description based on plan and billing cycle
+  const description = `${planName} Plan: $${amount} / ${billingCycle === "yearly" ? "year" : "month"}`;
   
   const response = await fetch(
     `${AIRWALLEX_BASE_URL}/api/v1/prices/create`,
@@ -83,13 +86,16 @@ export async function createAirwallexPrice(productId: string, amount: number, cu
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        product_id: productId,
-        unit_amount: Math.round(amount * 100), // Convert to cents
+        active: true,
+        billing_type: "IN_ADVANCE",
         currency: currency,
-        billing_scheme: "per_unit",
+        description: description,
+        flat_amount: amount,
+        pricing_model: "FLAT",
+        product_id: productId,
         recurring: {
-          interval: billingCycle === "yearly" ? "year" : "month",
-          interval_count: 1
+          period: 1,
+          period_unit: billingCycle === "yearly" ? "YEAR" : "MONTH"
         },
         request_id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }),
