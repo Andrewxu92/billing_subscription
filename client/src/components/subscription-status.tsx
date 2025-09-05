@@ -35,13 +35,11 @@ export function SubscriptionStatus() {
     onSuccess: async (data) => {
       toast({
         title: "Redirecting to Payment",
-        description: "You'll be redirected to our secure payment page...",
+        description: "You'll be redirected to Airwallex secure checkout...",
       });
       
-      // Simulate Airwallex redirect for demo
-      setTimeout(() => {
-        window.location.href = `/payment-success?intent_id=${data.payment_intent.id}`;
-      }, 2000);
+      // Redirect to Airwallex billing checkout page
+      window.location.href = data.checkout_url;
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -81,9 +79,9 @@ export function SubscriptionStatus() {
     );
   }
 
-  const subscription = userInfo?.subscription;
+  const subscription = (userInfo as any)?.subscription;
   const plan = subscription?.plan;
-  const aiUsageThisMonth = userInfo?.aiUsageThisMonth || 0;
+  const aiUsageThisMonth = (userInfo as any)?.aiUsageThisMonth || 0;
   
   const planName = plan?.name || 'Free';
   const isFreePlan = planName === 'Free';

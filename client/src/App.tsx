@@ -11,6 +11,7 @@ import Home from "@/pages/home";
 import Editor from "@/pages/editor";
 import PaymentSuccess from "@/pages/payment-success";
 import PaymentFailed from "@/pages/payment-failed";
+import PaymentCancel from "@/pages/payment-cancel";
 import AuthPage from "@/pages/auth-page";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
         {/* Payment routes - always accessible */}
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/payment-failed" component={PaymentFailed} />
+        <Route path="/payment-cancel" component={PaymentCancel} />
         
         {/* Fallback to 404 */}
         <Route component={NotFound} />

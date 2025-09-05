@@ -10,24 +10,29 @@ const AIRWALLEX_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.airwallex.com' 
   : 'https://api-demo.airwallex.com';
 
-const AIRWALLEX_CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID || 'demo_client_id';
-const AIRWALLEX_CLIENT_SECRET = process.env.AIRWALLEX_CLIENT_SECRET || 'demo_client_secret';
+const AIRWALLEX_CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID;
+const AIRWALLEX_API_KEY = process.env.AIRWALLEX_API_KEY;
 
 // Airwallex API helpers
 async function getAirwallexToken(): Promise<string> {
-  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/authentication/login`, {
+  if (!AIRWALLEX_CLIENT_ID || !AIRWALLEX_API_KEY) {
+    throw new Error('Airwallex credentials not configured');
+  }
+
+  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/authentication/authenticate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       client_id: AIRWALLEX_CLIENT_ID,
-      client_secret: AIRWALLEX_CLIENT_SECRET,
+      api_key: AIRWALLEX_API_KEY,
     }),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to authenticate with Airwallex');
+    const errorText = await response.text();
+    throw new Error(`Failed to authenticate with Airwallex: ${response.status} ${errorText}`);
   }
 
   const data = await response.json();
@@ -71,10 +76,10 @@ async function createAirwallexPaymentIntent(amount: number, currency: string, or
   return await response.json();
 }
 
-async function createAirwallexCustomer(email: string, firstName?: string, lastName?: string) {
+async function createAirwallexBillingCustomer(email: string, firstName?: string, lastName?: string) {
   const token = await getAirwallexToken();
   
-  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/customers/create`, {
+  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/billing/customers/_create`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -88,7 +93,55 @@ async function createAirwallexCustomer(email: string, firstName?: string, lastNa
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create customer');
+    const errorText = await response.text();
+    throw new Error(`Failed to create billing customer: ${response.status} ${errorText}`);
+  }
+
+  return await response.json();
+}
+
+async function createAirwallexBillingCheckout(
+  customerId: string, 
+  planId: string, 
+  billingCycle: string,
+  successUrl: string,
+  cancelUrl: string
+) {
+  const token = await getAirwallexToken();
+  
+  // Get plan details to set up the checkout
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error('Plan not found');
+  }
+
+  const amount = billingCycle === 'yearly' ? (plan.yearlyPrice || 0) : (plan.monthlyPrice || 0);
+  
+  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/billing/checkouts/_create`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      customer_id: customerId,
+      amount: (amount || 0) * 100, // Convert to cents
+      currency: 'USD',
+      billing_cycle: billingCycle,
+      product_name: plan.name,
+      product_description: `PhotoPro ${plan.name} Plan`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        plan_id: planId,
+        billing_cycle: billingCycle,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create billing checkout: ${response.status} ${errorText}`);
   }
 
   return await response.json();
@@ -185,33 +238,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid plan pricing" });
       }
 
-      // Create or get Airwallex customer
-      let airwallexCustomerId: string | undefined;
-      
-      try {
-        const customerData = await createAirwallexCustomer(
-          user.email || '',
-          user.firstName || undefined,
-          user.lastName || undefined
-        );
-        airwallexCustomerId = customerData.id;
-      } catch (error) {
-        console.warn("Failed to create Airwallex customer:", error);
-      }
+      // Create Airwallex billing customer
+      const customerData = await createAirwallexBillingCustomer(
+        user.email || '',
+        user.firstName || undefined,
+        user.lastName || undefined
+      );
+      const billingCustomerId = customerData.id;
 
-      // Create payment intent with Airwallex
-      const orderId = `order_${Date.now()}_${userId}`;
-      const airwallexPaymentIntent = await createAirwallexPaymentIntent(
-        amount,
-        'USD',
-        orderId,
-        airwallexCustomerId
+      // Create billing checkout page
+      const successUrl = `${req.protocol}://${req.get('host')}/payment-success`;
+      const cancelUrl = `${req.protocol}://${req.get('host')}/payment-cancel`;
+      
+      const checkoutData = await createAirwallexBillingCheckout(
+        billingCustomerId,
+        planId,
+        billingCycle,
+        successUrl,
+        cancelUrl
       );
 
       // Store payment transaction
       await storage.createPaymentTransaction({
         userId,
-        airwallexPaymentIntentId: airwallexPaymentIntent.id,
+        airwallexPaymentIntentId: checkoutData.id,
         amount: amount.toString(),
         currency: 'USD',
         status: 'pending',
@@ -219,7 +269,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        payment_intent: airwallexPaymentIntent,
+        checkout_url: checkoutData.url,
+        checkout_id: checkoutData.id,
         amount,
         currency: 'USD',
         plan_name: plan.name,

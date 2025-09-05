@@ -32,47 +32,15 @@ export function PricingCard({ billingPeriod }: PricingCardProps) {
       return response.json();
     },
     onSuccess: async (data) => {
-      // Initialize Airwallex payment redirect
-      try {
-        // In a real implementation, you would use the Airwallex SDK here
-        // For now, we'll simulate the redirect
-        setPaymentLoading(null);
-        
-        // Simulate Airwallex redirect
-        toast({
-          title: "Redirecting to Payment",
-          description: "You'll be redirected to our secure payment page...",
-        });
-        
-        // In production, this would be:
-        // const { payments } = await window.AirwallexComponentsSDK.init({
-        //   env: process.env.NODE_ENV === 'production' ? 'prod' : 'demo',
-        //   enabledElements: ['payments'],
-        // });
-        //
-        // payments.redirectToCheckout({
-        //   mode: 'payment',
-        //   intent_id: data.payment_intent.id,
-        //   client_secret: data.payment_intent.client_secret,
-        //   currency: data.currency,
-        //   successUrl: `${window.location.origin}/payment-success?intent_id=${data.payment_intent.id}`,
-        //   failUrl: `${window.location.origin}/payment-failed?intent_id=${data.payment_intent.id}`
-        // });
-        
-        // For demo purposes, redirect to success page after delay
-        setTimeout(() => {
-          window.location.href = `/payment-success?intent_id=${data.payment_intent.id}`;
-        }, 2000);
-        
-      } catch (error) {
-        console.error('Payment redirect failed:', error);
-        setPaymentLoading(null);
-        toast({
-          title: "Payment Error",
-          description: "Failed to initialize payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      setPaymentLoading(null);
+      
+      toast({
+        title: "Redirecting to Payment",
+        description: "You'll be redirected to Airwallex secure checkout...",
+      });
+      
+      // Redirect to Airwallex billing checkout page
+      window.location.href = data.checkout_url;
     },
     onError: (error) => {
       setPaymentLoading(null);
@@ -190,7 +158,7 @@ export function PricingCard({ billingPeriod }: PricingCardProps) {
               
               <CardContent className="space-y-6">
                 <ul className="space-y-3">
-                  {plan.features.map((feature: string, featureIndex: number) => (
+                  {(plan.features as string[]).map((feature: string, featureIndex: number) => (
                     <li key={featureIndex} className="flex items-center text-muted-foreground">
                       <Check className="h-4 w-4 text-accent mr-3 flex-shrink-0" />
                       <span className="text-sm">{feature}</span>
