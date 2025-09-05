@@ -20,7 +20,7 @@ async function getAirwallexToken(): Promise<string> {
     throw new Error("Airwallex credentials not configured");
   }
 
-  console.log('Authenticating with Airwallex:', AIRWALLEX_BASE_URL);
+  console.log("Authenticating with Airwallex:", AIRWALLEX_BASE_URL);
   const response = await fetch(
     `${AIRWALLEX_BASE_URL}/api/v1/authentication/login`,
     {
@@ -28,11 +28,9 @@ async function getAirwallexToken(): Promise<string> {
       headers: {
         "Content-Type": "application/json",
         "x-client-id": AIRWALLEX_CLIENT_ID,
+        "x-api-key": AIRWALLEX_API_KEY,
       },
-     
-        client_id:
-        api_key: AIRWALLEX_API_KEY,
-      }),
+      body: JSON.stringify({}),
     },
   );
 
@@ -57,7 +55,7 @@ async function createAirwallexBillingCustomer(
   const token = await getAirwallexToken();
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/billing/customers/create`,
+    `${AIRWALLEX_BASE_URL}/api/v1/billing_customers/create`,
     {
       method: "POST",
       headers: {
@@ -65,9 +63,12 @@ async function createAirwallexBillingCustomer(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        address: {
+          country_code: "US"
+        },
         email,
-        first_name: firstName,
-        last_name: lastName,
+        request_id: `billing_cus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: "INDIVIDUAL"
       }),
     },
   );
@@ -101,7 +102,7 @@ async function createAirwallexBillingCheckout(
     billingCycle === "yearly" ? plan.yearlyPrice || 0 : plan.monthlyPrice || 0;
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/billing/checkouts/create`,
+    `${AIRWALLEX_BASE_URL}/api/v1/billing_checkouts/create`,
     {
       method: "POST",
       headers: {
