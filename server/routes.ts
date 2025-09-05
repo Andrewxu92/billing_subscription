@@ -22,7 +22,7 @@ async function getAirwallexToken(): Promise<string> {
 
   console.log('Authenticating with Airwallex:', AIRWALLEX_BASE_URL);
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/authentication/authenticate`,
+    `${AIRWALLEX_BASE_URL}/api/v1/authentication/login`,
     {
       method: "POST",
       headers: {
