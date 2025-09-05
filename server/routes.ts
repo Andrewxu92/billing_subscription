@@ -7,7 +7,7 @@ import { z } from "zod";
 
 // Airwallex API configuration
 const AIRWALLEX_BASE_URL =
-  process.env.NODE_ENV === "development"
+  process.env.NODE_ENV === "production"
     ? "https://api.airwallex.com"
     : "https://api-demo.airwallex.com";
 
@@ -21,7 +21,7 @@ async function getAirwallexToken(): Promise<string> {
   }
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/authentication/login`,
+    `${AIRWALLEX_BASE_URL}/api/v1/authentication/authenticate`,
     {
       method: "POST",
       headers: {
