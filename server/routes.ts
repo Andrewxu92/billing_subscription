@@ -21,7 +21,7 @@ async function getAirwallexToken(): Promise<string> {
   }
 
   const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/authentication/authenticate`,
+    `${AIRWALLEX_BASE_URL}/api/v1/authentication/login`,
     {
       method: "POST",
       headers: {
@@ -246,12 +246,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const validation = createPaymentIntentSchema.safeParse(req.body);
         if (!validation.success) {
-          return res
-            .status(400)
-            .json({
-              message: "Invalid request data",
-              errors: validation.error.errors,
-            });
+          return res.status(400).json({
+            message: "Invalid request data",
+            errors: validation.error.errors,
+          });
         }
 
         const { planId, billingCycle } = validation.data;
