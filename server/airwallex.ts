@@ -1,8 +1,9 @@
 // Airwallex API configuration and service functions
 
-const AIRWALLEX_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.airwallex.com' 
-  : 'https://api-demo.airwallex.com';
+const AIRWALLEX_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://api.airwallex.com"
+    : "https://api-demo.airwallex.com";
 
 const AIRWALLEX_CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID;
 const AIRWALLEX_API_KEY = process.env.AIRWALLEX_API_KEY;
@@ -39,25 +40,25 @@ export async function getAirwallexToken(): Promise<string> {
 }
 
 // Product creation
-export async function createAirwallexProduct(planName: string, description: string) {
+export async function createAirwallexProduct(
+  planName: string,
+  description: string,
+) {
   const token = await getAirwallexToken();
-  
-  const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/products/create`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: planName,
-        description: description,
-        type: "service",
-        request_id: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }),
+
+  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/products/create`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      name: planName,
+      description: description,
+      type: "service",
+      request_id: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    }),
+  });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
@@ -66,17 +67,26 @@ export async function createAirwallexProduct(planName: string, description: stri
   }
 
   const productData = await response.json();
-  console.log('Product created successfully:', JSON.stringify(productData, null, 2));
+  console.log(
+    "Product created successfully:",
+    JSON.stringify(productData, null, 2),
+  );
   return productData;
 }
 
 // Price creation
-export async function createAirwallexPrice(productId: string, amount: number, currency: string, billingCycle: string, planName: string) {
+export async function createAirwallexPrice(
+  productId: string,
+  amount: number,
+  currency: string,
+  billingCycle: string,
+  planName: string,
+) {
   const token = await getAirwallexToken();
-  
+
   // Generate description based on plan and billing cycle
   const description = `${planName} Plan: $${amount} / ${billingCycle === "yearly" ? "year" : "month"}`;
-  
+
   const requestBody = {
     active: true,
     billing_type: "IN_ADVANCE",
@@ -87,34 +97,35 @@ export async function createAirwallexPrice(productId: string, amount: number, cu
     product_id: productId,
     recurring: {
       period: 1,
-      period_unit: billingCycle === "yearly" ? "YEAR" : "MONTH"
+      period_unit: billingCycle === "yearly" ? "YEAR" : "MONTH",
     },
-    request_id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    request_id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   };
-  
-  console.log('Creating price with request body:', JSON.stringify(requestBody, null, 2));
-  
-  const response = await fetch(
-    `${AIRWALLEX_BASE_URL}/api/v1/prices/create`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    },
+
+  console.log(
+    "Creating price with request body:",
+    JSON.stringify(requestBody, null, 2),
   );
+
+  const response = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/prices/create`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(
-      `Failed to create price: ${response.status} ${errorText}`,
-    );
+    throw new Error(`Failed to create price: ${response.status} ${errorText}`);
   }
 
   const priceData = await response.json();
-  console.log('Price created successfully:', JSON.stringify(priceData, null, 2));
+  console.log(
+    "Price created successfully:",
+    JSON.stringify(priceData, null, 2),
+  );
   return priceData;
 }
 
@@ -152,9 +163,12 @@ export async function createAirwallexBillingCustomer(
       `Failed to create billing customer: ${response.status} ${errorText}`,
     );
   }
-  
+
   const customerData = await response.json();
-  console.log('Billing customer created successfully:', JSON.stringify(customerData, null, 2));
+  console.log(
+    "Billing customer created successfully:",
+    JSON.stringify(customerData, null, 2),
+  );
   return customerData;
 }
 
@@ -174,6 +188,7 @@ export async function createAirwallexBillingCheckout(
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "x-api-version": "2025-08-29",
       },
       body: JSON.stringify({
         mode: "subscription",
@@ -193,6 +208,9 @@ export async function createAirwallexBillingCheckout(
   }
 
   const checkoutData = await response.json();
-  console.log('Billing checkout created successfully:', JSON.stringify(checkoutData, null, 2));
+  console.log(
+    "Billing checkout created successfully:",
+    JSON.stringify(checkoutData, null, 2),
+  );
   return checkoutData;
 }
