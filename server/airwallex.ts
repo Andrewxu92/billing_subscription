@@ -8,6 +8,10 @@ const AIRWALLEX_BASE_URL =
 const AIRWALLEX_CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID;
 const AIRWALLEX_API_KEY = process.env.AIRWALLEX_API_KEY;
 
+// Airwallex account configuration
+const AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID = "acct_TMCQJUnYNcyHduYOyT_xMg";
+const AIRWALLEX_LEGAL_ENTITY_ID = "le_YRcBTRNtPgiN54jmcOOA7g";
+
 // Authentication
 export async function getAirwallexToken(): Promise<string> {
   if (!AIRWALLEX_CLIENT_ID || !AIRWALLEX_API_KEY) {
@@ -188,12 +192,14 @@ export async function createAirwallexBillingCheckout(
     customer_data_collection: {
       enabled: true
     },
+    legal_entity_id: AIRWALLEX_LEGAL_ENTITY_ID,
     line_items: [
       {
         price_id: priceId,
         quantity: 1
       }
     ],
+    linked_payment_account_id: AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
     locale: "AUTO", 
     mode: "SUBSCRIPTION",
     request_id: `checkout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
