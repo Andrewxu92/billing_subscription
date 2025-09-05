@@ -53,11 +53,11 @@ export async function createAirwallexProduct(planName: string, description: stri
       body: JSON.stringify({
         name: planName,
         description: description,
-        type: "service"
+        type: "service",
+        request_id: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }),
     },
   );
-
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
@@ -90,7 +90,8 @@ export async function createAirwallexPrice(productId: string, amount: number, cu
         recurring: {
           interval: billingCycle === "yearly" ? "year" : "month",
           interval_count: 1
-        }
+        },
+        request_id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }),
     },
   );
